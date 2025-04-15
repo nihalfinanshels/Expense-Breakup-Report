@@ -13,30 +13,26 @@ if uploaded_file:
     st.subheader("Original Data")
     st.write(df)
 
-    # Clean the data (ensure 'Date' is in datetime format)
-    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')  # Convert Date to datetime
+    # Clean the data (ensure columns are in correct format)
+    # In this case, the columns are already months, so no date conversion is needed.
+    
+    # Fill missing values with 0 (if needed, you can modify this logic)
+    df = df.fillna(0)
 
-    # Extract Month from the 'Date' column
-    df['Month'] = df['Date'].dt.to_period('M')  # Get month-year period (e.g., 'Dec-2024')
+    # Organize the data into a pivot-like structure (if needed, adjust aggregation)
+    # We will ensure the months stay as columns and Account + Contact as rows
 
-    # Pivot the data: Expenses (rows), Contacts (columns), Values (Gross USD)
-    pivot_df = df.pivot_table(
-        index=['Account'], 
-        columns=['Contact', 'Month'], 
-        values='Gross (USD)', 
-        aggfunc='sum', 
-        fill_value=0
-    )
+    # Display the breakdown in the requested format
+    breakdown_df = df.set_index(['Account', 'Contact'])
 
-    # Display the pivot table (Expense types vs Contacts with the respective monthly values)
     st.subheader("Expense Breakdown by Contact and Month")
-    st.write(pivot_df)
+    st.write(breakdown_df)
 
-    # Option to download the pivot table as Excel
-    output = pd.ExcelWriter("expense_breakdown_pivot.xlsx", engine='xlsxwriter')
-    pivot_df.to_excel(output, sheet_name="Breakdown", index=True)
+    # Option to download the breakdown as Excel
+    output = pd.ExcelWriter("expense_breakdown_pivot_format.xlsx", engine='xlsxwriter')
+    breakdown_df.to_excel(output, sheet_name="Breakdown", index=True)
     output.save()
 
     # Button to download the breakdown
-    with open("expense_breakdown_pivot.xlsx", "rb") as file:
-        st.download_button("📥 Download Breakdown", file, file_name="expense_breakdown_pivot.xlsx")
+    with open("expense_breakdown_pivot_format.xlsx", "rb") as file:
+        st.download_button("📥 Download Breakdown", file, file_name="expense_breakdown_pivot_format.xlsx")
