@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-st.title("📊 Expense Breakdown by Contact and Month")
+st.title("📊 Expense Breakdown by Account, Contact, and Month")
 
 # Upload the file
 uploaded_file = st.file_uploader("Upload your Expense Excel file", type=["xlsx"])
@@ -14,28 +14,46 @@ if uploaded_file:
     st.subheader("Original Data")
     st.write(df)
 
-    # Clean the data: Replace NaN values with 0 and ensure columns have appropriate types
-    df = df.fillna(0)  # Replace NaN values with 0
+    # Extract unique months from the "Monthly" column
+    months = df['Monthly'].unique()
+
+    # Initialize a new DataFrame to construct the desired output
+    expense_accounts = df['Account'].unique()
     
-    # Ensure numeric columns are properly cast to numeric types (where applicable)
-    df['Apr-2025'] = pd.to_numeric(df['Apr-2025'], errors='coerce').fillna(0)
-    df['Mar-2025'] = pd.to_numeric(df['Mar-2025'], errors='coerce').fillna(0)
-    df['Feb-2025'] = pd.to_numeric(df['Feb-2025'], errors='coerce').fillna(0)
-    df['Jan-2025'] = pd.to_numeric(df['Jan-2025'], errors='coerce').fillna(0)
-    df['Dec-2024'] = pd.to_numeric(df['Dec-2024'], errors='coerce').fillna(0)
+    # Create an empty DataFrame for the output structure
+    output_df = pd.DataFrame(columns=["Expense Account"] + list(months))
+    
+    # Fill in the "Expense Account" column with the unique account names
+    output_df['Expense Account'] = list(expense_accounts) * len(df['Contact'].unique())
 
-    # Organize the data into a pivot-like structure (if needed, adjust aggregation)
-    breakdown_df = df.set_index(['Account', 'Contact'])
+    # Loop through each account and its corresponding contact
+    for idx, account in enumerate(expense_accounts):
+        # Extract the rows corresponding to each account
+        account_data = df[df['Account'] == account]
+        
+        for contact in account_data['Contact'].unique():
+            # Filter data for the specific account and contact
+            contact_data = account_data[account_data['Contact'] == contact]
+            
+            # Extract the expenses for each month
+            expenses = contact_data.groupby('Monthly')['Gross (USD)'].sum()
+            
+            # Add the contact name in the second column (Contact)
+            contact_expenses = [contact] + [expenses.get(month, 0) for month in months]
+            
+            # Append the contact data to the output DataFrame
+            output_df.loc[len(output_df)] = contact_expenses
+    
+    # Display the final table
+    st.subheader("Formatted Expense Breakdown")
+    st.write(output_df)
 
-    # Display the cleaned breakdown
-    st.subheader("Expense Breakdown by Contact and Month")
-    st.write(breakdown_df)
-
-    # Option to download the breakdown as Excel
-    output = pd.ExcelWriter("expense_breakdown_pivot_format.xlsx", engine='xlsxwriter')
-    breakdown_df.to_excel(output, sheet_name="Breakdown", index=True)
+    # Option to download the formatted table as Excel
+    output_file = "formatted_expense_breakdown.xlsx"
+    output = pd.ExcelWriter(output_file, engine='xlsxwriter')
+    output_df.to_excel(output, sheet_name="Breakdown", index=False)
     output.save()
 
-    # Button to download the breakdown
-    with open("expense_breakdown_pivot_format.xlsx", "rb") as file:
-        st.download_button("📥 Download Breakdown", file, file_name="expense_breakdown_pivot_format.xlsx")
+    # Button to download the formatted table
+    with open(output_file, "rb") as file:
+        st.download_button("📥 Download Breakdown", file, file_name="formatted_expense_breakdown.xlsx")
