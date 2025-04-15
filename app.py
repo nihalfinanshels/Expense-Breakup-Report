@@ -7,24 +7,27 @@ st.title("📊 Expense Breakdown by Contact and Month")
 uploaded_file = st.file_uploader("Upload your Expense Excel file", type=["xlsx"])
 
 if uploaded_file:
+    # Read the file
     df = pd.read_excel(uploaded_file)
     
     # Display raw data
     st.subheader("Original Data")
     st.write(df)
 
-    # Clean the data (ensure columns are in correct format)
-    # In this case, the columns are already months, so no date conversion is needed.
+    # Clean the data: Replace NaN values with 0 and ensure columns have appropriate types
+    df = df.fillna(0)  # Replace NaN values with 0
     
-    # Fill missing values with 0 (if needed, you can modify this logic)
-    df = df.fillna(0)
+    # Ensure numeric columns are properly cast to numeric types (where applicable)
+    df['Apr-2025'] = pd.to_numeric(df['Apr-2025'], errors='coerce').fillna(0)
+    df['Mar-2025'] = pd.to_numeric(df['Mar-2025'], errors='coerce').fillna(0)
+    df['Feb-2025'] = pd.to_numeric(df['Feb-2025'], errors='coerce').fillna(0)
+    df['Jan-2025'] = pd.to_numeric(df['Jan-2025'], errors='coerce').fillna(0)
+    df['Dec-2024'] = pd.to_numeric(df['Dec-2024'], errors='coerce').fillna(0)
 
     # Organize the data into a pivot-like structure (if needed, adjust aggregation)
-    # We will ensure the months stay as columns and Account + Contact as rows
-
-    # Display the breakdown in the requested format
     breakdown_df = df.set_index(['Account', 'Contact'])
 
+    # Display the cleaned breakdown
     st.subheader("Expense Breakdown by Contact and Month")
     st.write(breakdown_df)
 
