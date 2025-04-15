@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-st.title("📊 Expense Breakdown by Contact and Period")
+st.title("📊 Expense Breakdown by Contact and Month")
 
 # Upload the file
 uploaded_file = st.file_uploader("Upload your Expense Excel file", type=["xlsx"])
@@ -13,26 +13,30 @@ if uploaded_file:
     st.subheader("Original Data")
     st.write(df)
 
-    # Clean the data (if necessary)
-    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')  # Ensure 'Date' is a datetime object
+    # Clean the data (ensure 'Date' is in datetime format)
+    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')  # Convert Date to datetime
 
-    # Organizing data by Contact and Period (Weekly/Monthly)
-    # Aggregating by Contact and Period to generate the breakdown
-    breakdown = df.groupby(['Contact', 'Weekly', 'Monthly']).agg({
-        'Account': 'first',  # Assuming each expense type is unique per Contact and Period
-        'Gross (USD)': 'sum',  # Summing Gross (USD) per contact and period
-        'FACTOR': 'mean',  # Averaging the FACTOR (if needed, you can sum or perform other operations)
-    }).reset_index()
+    # Extract Month from the 'Date' column
+    df['Month'] = df['Date'].dt.to_period('M')  # Get month-year period (e.g., 'Dec-2024')
 
-    # Display the summary table
-    st.subheader("Expense Breakdown")
-    st.write(breakdown)
+    # Pivot the data: Expenses (rows), Contacts (columns), Values (Gross USD)
+    pivot_df = df.pivot_table(
+        index=['Account'], 
+        columns=['Contact', 'Month'], 
+        values='Gross (USD)', 
+        aggfunc='sum', 
+        fill_value=0
+    )
 
-    # Option to download the breakdown as Excel
-    output = pd.ExcelWriter("expense_breakdown.xlsx", engine='xlsxwriter')
-    breakdown.to_excel(output, sheet_name="Breakdown", index=False)
+    # Display the pivot table (Expense types vs Contacts with the respective monthly values)
+    st.subheader("Expense Breakdown by Contact and Month")
+    st.write(pivot_df)
+
+    # Option to download the pivot table as Excel
+    output = pd.ExcelWriter("expense_breakdown_pivot.xlsx", engine='xlsxwriter')
+    pivot_df.to_excel(output, sheet_name="Breakdown", index=True)
     output.save()
 
     # Button to download the breakdown
-    with open("expense_breakdown.xlsx", "rb") as file:
-        st.download_button("📥 Download Breakdown", file, file_name="expense_breakdown.xlsx")
+    with open("expense_breakdown_pivot.xlsx", "rb") as file:
+        st.download_button("📥 Download Breakdown", file, file_name="expense_breakdown_pivot.xlsx")
