@@ -44,15 +44,19 @@ if uploaded_file:
             # Append the contact data to the output DataFrame
             output_df.loc[len(output_df)] = contact_expenses
     
+    # Replace NaN values with 0 or empty string for all columns
+    output_df = output_df.fillna(0)  # or fillna("") if you prefer empty strings
+
     # Display the final table
     st.subheader("Formatted Expense Breakdown")
     st.write(output_df)
 
     # Option to download the formatted table as Excel
     output_file = "formatted_expense_breakdown.xlsx"
-    output = pd.ExcelWriter(output_file, engine='xlsxwriter')
-    output_df.to_excel(output, sheet_name="Breakdown", index=False)
-    output.save()
+    
+    # Save the DataFrame to an Excel file using the default engine (xlsxwriter)
+    with pd.ExcelWriter(output_file, engine='xlsxwriter') as writer:
+        output_df.to_excel(writer, sheet_name="Breakdown", index=False)
 
     # Button to download the formatted table
     with open(output_file, "rb") as file:
