@@ -54,8 +54,8 @@ if uploaded_file:
     # Option to download the formatted table as Excel
     output_file = "formatted_expense_breakdown.xlsx"
     
-    # Save the DataFrame to an Excel file using the default engine (xlsxwriter)
-    with pd.ExcelWriter(output_file, engine='xlsxwriter') as writer:
+    # Save the DataFrame to an Excel file using the openpyxl engine
+    with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
         output_df.to_excel(writer, sheet_name="Breakdown", index=False)
 
     # Button to download the formatted table
